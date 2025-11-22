@@ -1,6 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.READ_SMS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
       android:name=".MainApplication"
@@ -11,6 +15,17 @@
       android:theme="@style/AppTheme"
       android:usesCleartextTraffic="${usesCleartextTraffic}"
       android:supportsRtl="true">
+
+      <!-- Manifest-declared receiver: survives app swipe-away -->
+      <receiver
+          android:name=".SmsReceiver"
+          android:exported="true"
+          android:enabled="true">
+          <intent-filter android:priority="999">
+              <action android:name="android.provider.Telephony.SMS_RECEIVED" />
+          </intent-filter>
+      </receiver>
+
       <activity
         android:name=".MainActivity"
         android:label="@string/app_name"
@@ -24,4 +39,5 @@
         </intent-filter>
       </activity>
     </application>
+
 </manifest>
