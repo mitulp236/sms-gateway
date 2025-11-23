@@ -13,6 +13,12 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.json.JSONTokener;
+
+import java.io.InputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 public class SmsSendWorker extends Worker {
   private static final String TAG = "SmsSendWorker";
@@ -29,9 +35,27 @@ public class SmsSendWorker extends Worker {
 
     String sender = getInputData().getString("sender");
     String body = getInputData().getString("body");
-    String time = getInputData().getString("time");
+    long timestamp = getInputData().getLong("time", System.currentTimeMillis()); // Default to current time if missing
 
-    Log.d(TAG, "[doWork] SMS from: " + sender + " body: " + body.substring(0, Math.min(50, body.length())));
+    // Convert timestamp to human-readable format
+    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+    String time = dateFormat.format(new Date(timestamp));
+
+    Log.d(TAG, "[doWork] SMS from: " + sender + " body: " + body + " time: " + time);
+
+    // Escape special characters in the message body
+    String escapedBody = body
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace("\"", "&quot;")
+        .replace("'", "&#39;");
+
+    // Make links clickable in the message body
+    String clickableBody = escapedBody.replaceAll(
+        "(https?://[\\w\\-._~:/?#\\[\\]@!$&'()*+,;=%]+)",
+        "<a href=\"$1\" target=\"_blank\">$1</a>"
+    );
 
     // Load config from SharedPreferences
     SharedPreferences prefs = getApplicationContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
@@ -53,9 +77,25 @@ public class SmsSendWorker extends Worker {
     }
 
     try {
+      // Load email template from JSON file in assets
+      InputStream inputStream = getApplicationContext().getAssets().open("email-template.json");
+      int size = inputStream.available();
+      byte[] buffer = new byte[size];
+      inputStream.read(buffer);
+      inputStream.close();
+      String jsonString = new String(buffer, "UTF-8");
+      JSONObject jsonObject = (JSONObject) new JSONTokener(jsonString).nextValue();
+      String emailTemplate = jsonObject.getString("template");
+
+      // Replace placeholders in the email template
+      String htmlContent = emailTemplate
+          .replace("{{sender}}", sender)
+          .replace("{{time}}", time)
+          .replace("{{body}}", clickableBody);
+
       // Build Brevo JSON payload
       JSONObject senderObj = new JSONObject();
-      senderObj.put("name", "SMS Forwarder");
+      senderObj.put("name", "SMS Gateway"); // Consistent sender name
       senderObj.put("email", senderEmail);
 
       JSONObject toObj = new JSONObject();
@@ -66,9 +106,7 @@ public class SmsSendWorker extends Worker {
       payload.put("sender", senderObj);
       payload.put("to", new JSONArray().put(toObj));
       payload.put("subject", "SMS from " + sender);
-      payload.put("htmlContent",
-          "<h3>📱 New SMS Received</h3><p><strong>From:</strong> " + sender
-              + "</p><p><strong>Time:</strong> " + time + "</p><hr><p>" + body + "</p>");
+      payload.put("htmlContent", htmlContent);
       payload.put("textContent", "From: " + sender + "\nTime: " + time + "\n\nMessage:\n" + body);
 
       Log.d(TAG, "[doWork] sending to Brevo");

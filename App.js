@@ -18,6 +18,8 @@ import {
   DrawerLayoutAndroid,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BREVO_API_URL } from './src/constants';
+const emailTemplate = require('./email-template.json').template;
 
 const { SmsReceiverModule } = NativeModules;
 const smsEmitter = SmsReceiverModule ? new NativeEventEmitter(SmsReceiverModule) : null;
@@ -194,104 +196,116 @@ const App = () => {
   }, []);
 
   const forwardSmsViaEmail = async (message) => {
-    setIsSending(true);
-    try {
-      let apiKey = smtpPassword && smtpPassword.trim();
-      let senderEmailLocal = smtpEmail && smtpEmail.trim();
-      let targetEmailLocal = targetEmail && targetEmail.trim();
+  setIsSending(true);
+  try {
+    let apiKey = smtpPassword && smtpPassword.trim();
+    let senderEmailLocal = smtpEmail && smtpEmail.trim();
+    let targetEmailLocal = targetEmail && targetEmail.trim();
 
-      if (!apiKey || !senderEmailLocal || !targetEmailLocal) {
-        try {
-          const stored = await AsyncStorage.getItem('sms_config');
-          if (stored) {
-            const parsed = JSON.parse(stored);
-            apiKey = apiKey || (parsed.smtpPassword && parsed.smtpPassword.trim());
-            senderEmailLocal = senderEmailLocal || parsed.smtpEmail;
-            targetEmailLocal = targetEmailLocal || parsed.targetEmail;
-            console.log('[forwardSmsViaEmail] loaded config from storage');
-          }
-        } catch (e) {
-          console.warn('[forwardSmsViaEmail] failed to read stored config:', e);
+    if (!apiKey || !senderEmailLocal || !targetEmailLocal) {
+      try {
+        const stored = await AsyncStorage.getItem('sms_config');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          apiKey = apiKey || (parsed.smtpPassword && parsed.smtpPassword.trim());
+          senderEmailLocal = senderEmailLocal || parsed.smtpEmail;
+          targetEmailLocal = targetEmailLocal || parsed.targetEmail;
+          console.log('[forwardSmsViaEmail] loaded config from storage');
         }
+      } catch (e) {
+        console.warn('[forwardSmsViaEmail] failed to read stored config:', e);
       }
-
-      if (!apiKey) {
-        const msg = 'Brevo API key missing. Open app and save configuration.';
-        console.warn('[forwardSmsViaEmail]', msg);
-        Alert.alert('Email Error', msg);
-        return false;
-      }
-
-      if (!senderEmailLocal || !targetEmailLocal) {
-        const msg = 'Sender or target email missing in configuration.';
-        console.warn('[forwardSmsViaEmail]', msg);
-        Alert.alert('Email Error', msg);
-        return false;
-      }
-
-      const payload = {
-        sender: { name: 'SMS Gateway', email: senderEmailLocal },
-        to: [{ email: targetEmailLocal, name: 'You' }],
-        subject: `📱 SMS from ${message.sender}`,
-        htmlContent: `
-          <div style="font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5;">
-            <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-              <h3 style="color: #007AFF; margin-top: 0;">📱 New SMS Received</h3>
-              <p><strong>From:</strong> ${message.sender}</p>
-              <p><strong>Time:</strong> ${message.time}</p>
-              <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-              <p style="color: #333; font-size: 16px; line-height: 1.5;">${message.body}</p>
-            </div>
-          </div>
-        `,
-        textContent: `From: ${message.sender}\nTime: ${message.time}\n\nMessage:\n${message.body}`,
-      };
-
-      console.log('[forwardSmsViaEmail] sending payload');
-
-      const headers = {
-        accept: 'application/json',
-        'content-type': 'application/json',
-        'api-key': apiKey,
-      };
-
-      const resp = await fetch('https://api.brevo.com/v3/smtp/email', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(payload),
-      });
-
-      const rawText = await resp.text();
-      let parsed;
-      try { parsed = JSON.parse(rawText); } catch (e) { parsed = { raw: rawText }; }
-
-      console.log('[forwardSmsViaEmail] status:', resp.status, 'ok:', resp.ok, 'body:', parsed);
-
-      if (resp.ok) {
-        setMessages(prev => {
-          const updated = prev.map(m => (m.id === message.id ? { ...m, forwarded: true } : m));
-          try { AsyncStorage.setItem('messages', JSON.stringify(updated)); } catch (e) { console.warn(e); }
-          messagesRef.current = updated;
-          return updated;
-        });
-        return true;
-      } else {
-        const brevoMsg = parsed && (parsed.message || parsed.error || parsed.raw) || `HTTP ${resp.status}`;
-        console.warn('Brevo rejected send:', brevoMsg);
-        const hint = /auth|authentication|api[-_ ]?key/i.test(String(brevoMsg))
-          ? 'Authentication error — check your Brevo API key in app settings.'
-          : null;
-        Alert.alert('Email Delivery Error', `${brevoMsg}${hint ? '\n\nHint: ' + hint : ''}`);
-        return false;
-      }
-    } catch (error) {
-      console.error('Error forwarding SMS:', error);
-      Alert.alert('Email Error', `Failed to send: ${error.message || error}`);
-      return false;
-    } finally {
-      setIsSending(false);
     }
-  };
+
+    if (!apiKey) {
+      const msg = 'Brevo API key missing. Open app and save configuration.';
+      console.warn('[forwardSmsViaEmail]', msg);
+      Alert.alert('Email Error', msg);
+      return false;
+    }
+
+    if (!senderEmailLocal || !targetEmailLocal) {
+      const msg = 'Sender or target email missing in configuration.';
+      console.warn('[forwardSmsViaEmail]', msg);
+      Alert.alert('Email Error', msg);
+      return false;
+    }
+
+    // Replace placeholders in the email template
+    const htmlTemplate = emailTemplate
+      .replace('{{sender}}', message.sender)
+      .replace('{{time}}', message.time)
+      .replace('{{body}}', message.body);
+
+    const payload = {
+      sender: { name: 'SMS Gateway', email: senderEmailLocal },
+      to: [{ email: targetEmailLocal, name: 'You' }],
+      subject: `📱 SMS from ${message.sender}`,
+      htmlContent: htmlTemplate,
+      textContent: `From: ${message.sender}\nTime: ${message.time}\n\nMessage:\n${message.body}`,
+    };
+
+    console.log('[forwardSmsViaEmail] sending payload');
+
+    const headers = {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      'api-key': apiKey,
+    };
+
+    const resp = await fetch(BREVO_API_URL, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    });
+    console.log('payload', payload)
+
+    const rawText = await resp.text();
+    console.log('rawText', rawText)
+    let parsed;
+    try {
+      parsed = JSON.parse(rawText);
+    } catch (e) {
+      parsed = { raw: rawText };
+    }
+
+    console.log('[forwardSmsViaEmail] status:', resp.status, 'ok:', resp.ok, 'body:', parsed);
+
+    if (resp.ok) {
+      setMessages((prev) => {
+        const updated = prev.map((m) =>
+          m.id === message.id ? { ...m, forwarded: true } : m
+        );
+        try {
+          AsyncStorage.setItem('messages', JSON.stringify(updated));
+        } catch (e) {
+          console.warn(e);
+        }
+        messagesRef.current = updated;
+        return updated;
+      });
+      return true;
+    } else {
+      const brevoMsg =
+        (parsed && (parsed.message || parsed.error || parsed.raw)) || `HTTP ${resp.status}`;
+      console.warn('Brevo rejected send:', brevoMsg);
+      const hint = /auth|authentication|api[-_ ]?key/i.test(String(brevoMsg))
+        ? 'Authentication error — check your Brevo API key in app settings.'
+        : null;
+      Alert.alert(
+        'Email Delivery Error',
+        `${brevoMsg}${hint ? '\n\nHint: ' + hint : ''}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error forwarding SMS:', error);
+    Alert.alert('Email Error', `Failed to send: ${error.message || error}`);
+    return false;
+  } finally {
+    setIsSending(false);
+  }
+};
 
   const testEmail = async () => {
     if (!isConfigured) {
