@@ -1,0 +1,125 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Dark background with blue gradient -->
+  <rect width="1024" height="1024" rx="226" fill="url(#bgGradient)"/>
+
+  <defs>
+    <!-- Background gradient - Dark black to blue -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0F172A;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#1E293B;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0C4A6E;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Blue accent gradient -->
+    <linearGradient id="blueGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1D4ED8;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Cyan gradient -->
+    <linearGradient id="cyanGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#06B6D4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0891B2;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Electric blue gradient -->
+    <linearGradient id="electricGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#60A5FA;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3B82F6;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Shadow -->
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="10" stdDeviation="15" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+
+    <!-- Strong glow -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Blue glow -->
+    <filter id="blueGlow">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="10"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.2
+                                            0 0 0 0 0.5
+                                            0 0 0 0 0.97
+                                            0 0 0 1 0"/>
+      <feBlend in="SourceGraphic"/>
+    </filter>
+  </defs>
+
+  <!-- Subtle grid pattern -->
+  <g opacity="0.05">
+    <line x1="256" y1="0" x2="256" y2="1024" stroke="#FFFFFF" stroke-width="2"/>
+    <line x1="512" y1="0" x2="512" y2="1024" stroke="#FFFFFF" stroke-width="2"/>
+    <line x1="768" y1="0" x2="768" y2="1024" stroke="#FFFFFF" stroke-width="2"/>
+    <line x1="0" y1="256" x2="1024" y2="256" stroke="#FFFFFF" stroke-width="2"/>
+    <line x1="0" y1="512" x2="1024" y2="512" stroke="#FFFFFF" stroke-width="2"/>
+    <line x1="0" y1="768" x2="1024" y2="768" stroke="#FFFFFF" stroke-width="2"/>
+  </g>
+
+  <!-- Glowing circles in background -->
+  <circle cx="200" cy="200" r="100" fill="#3B82F6" opacity="0.1" filter="url(#blueGlow)"/>
+  <circle cx="824" cy="824" r="140" fill="#06B6D4" opacity="0.08" filter="url(#blueGlow)"/>
+
+  <!-- Email envelope (back element) with shadow -->
+  <g filter="url(#shadow)">
+    <rect x="500" y="460" width="440" height="340" rx="32"
+          fill="url(#cyanGradient)" stroke="#60A5FA" stroke-width="6"/>
+
+    <!-- Envelope flap -->
+    <path d="M 500 460 L 720 630 L 940 460 Z"
+          fill="#0891B2" stroke="#60A5FA" stroke-width="6" stroke-linejoin="round"/>
+
+    <!-- Envelope detail lines -->
+    <rect x="560" y="640" width="200" height="18" rx="9" fill="#FFFFFF" opacity="0.9"/>
+    <rect x="560" y="700" width="320" height="18" rx="9" fill="#FFFFFF" opacity="0.8"/>
+    <rect x="560" y="760" width="260" height="18" rx="9" fill="#FFFFFF" opacity="0.7"/>
+  </g>
+
+  <!-- SMS Message bubble (front element) with glow -->
+  <g filter="url(#shadow)">
+    <path d="M 120 240 L 620 240 C 670.51 240 712 281.49 712 332 L 712 568 C 712 618.51 670.51 660 620 660 L 320 660 L 180 800 L 180 660 L 120 660 C 69.49 660 28 618.51 28 568 L 28 332 C 28 281.49 69.49 240 120 240 Z"
+          fill="url(#blueGradient)" stroke="#60A5FA" stroke-width="8"/>
+
+    <!-- Bold message dots with glow -->
+    <circle cx="220" cy="450" r="42" fill="#FFFFFF" filter="url(#glow)"/>
+    <circle cx="370" cy="450" r="42" fill="#FFFFFF" filter="url(#glow)"/>
+    <circle cx="520" cy="450" r="42" fill="#FFFFFF" filter="url(#glow)"/>
+  </g>
+
+  <!-- Animated gateway arrow with strong glow -->
+  <g filter="url(#glow)">
+    <path d="M 560 360 L 740 450 L 560 540 L 560 485 L 440 485 L 440 415 L 560 415 Z"
+          fill="url(#electricGradient)"
+          stroke="#FFFFFF"
+          stroke-width="10"
+          stroke-linejoin="round"
+          stroke-linecap="round"/>
+
+    <!-- Motion trail lines -->
+    <line x1="460" y1="380" x2="510" y2="380" stroke="#60A5FA" stroke-width="12" stroke-linecap="round" opacity="0.8"/>
+    <line x1="440" y1="450" x2="500" y2="450" stroke="#60A5FA" stroke-width="14" stroke-linecap="round" opacity="0.9"/>
+    <line x1="460" y1="520" x2="510" y2="520" stroke="#60A5FA" stroke-width="12" stroke-linecap="round" opacity="0.8"/>
+  </g>
+
+  <!-- Signal waves with blue glow -->
+  <g opacity="0.85" stroke="#60A5FA" stroke-linecap="round" filter="url(#glow)">
+    <path d="M 770 400 Q 820 425 820 450 Q 820 475 770 500"
+          fill="none" stroke-width="18" stroke="#3B82F6"/>
+    <path d="M 840 370 Q 910 410 910 450 Q 910 490 840 530"
+          fill="none" stroke-width="16" stroke="#60A5FA"/>
+    <path d="M 910 340 Q 1000 390 1000 450 Q 1000 510 910 560"
+          fill="none" stroke-width="14" stroke="#06B6D4"/>
+  </g>
+
+  <!-- Additional accent dots for tech feel -->
+  <circle cx="100" cy="900" r="12" fill="#3B82F6" opacity="0.6"/>
+  <circle cx="920" cy="120" r="16" fill="#06B6D4" opacity="0.5"/>
+  <circle cx="150" cy="150" r="10" fill="#60A5FA" opacity="0.7"/>
+</svg>
